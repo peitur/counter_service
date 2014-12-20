@@ -15,9 +15,15 @@
 	]).
 
 -export([
-
+		tick_counter/2, tick_counter/3,
+		tick_counter_aync/2, tick_counter_aync/3
 	]).
 
+-export([
+		get_counter/1, get_counter/2,
+		get_name/1,
+		get_description/1
+	]).
 
 %% ====================================================================
 %% Behavioural functions 
@@ -61,12 +67,33 @@ unregister_counter( Pid, Name ) ->
 unregister_counter( Pid, Name, Reason ) ->
 	gen_server:call( Pid, {stop_counter, Name, Reason} ).
 
-
 stop( Pid ) ->
 	stop( Pid, normal ).
 
 stop( Pid, Reason ) ->
 	gen_server:call( Pid, {stop, Reason} ).
+
+tick_counter( DomainPid, CounterName ) ->
+	tick_counter( DomainPid, CounterName, 1 ).
+
+tick_counter( DomainPid, CounterName, Val ) ->
+	gen_server:call( DomainPid, {tick_counter, CounterName, Val} ).
+
+tick_counter_aync( DomainPid, CounterName ) ->
+	tick_counter_aync( DomainPid, CounterName, 1 ).
+
+tick_counter_aync( DomainPid, CounterName, Val ) ->
+	gen_server:cast( DomainPid, {tick_counter, CounterName, Val} ).
+
+get_counter( DomainPid ) ->
+	get_counter( DomainPid, [] ).
+
+get_counter( DomainPid, CounterList ) ->
+	gen_server:call( DomainPid, {get_counter, CounterList} ).
+
+get_name( DomainPid ) -> gen_server:call( DomainPid, {get_name} ).
+get_description( DomainPid ) -> gen_server:call( DomainPid, {get_description} ).
+
 
 %% init/1
 %% ====================================================================
@@ -83,7 +110,10 @@ stop( Pid, Reason ) ->
 init([Parent, Name, Options]) ->
 	erlang:process_flag( trap_exit, true ),
 
-    {ok, #state{ parent = Parent, name = Name, description = <<"">> }}.
+    {ok, #state{ 	parent = Parent, 
+    				name = Name, 
+    				description = <<"">> 
+    			}}.
 
 
 %% handle_call/3
@@ -103,6 +133,31 @@ init([Parent, Name, Options]) ->
 	Timeout :: non_neg_integer() | infinity,
 	Reason :: term().
 %% ====================================================================
+handle_call( {get_counter, ReqList}, _From, #state{ counter_list = CounterList} = State ) ->
+	{reply, ok, State};
+
+handle_call( {get_description}, _From, State ) ->
+	{reply, {ok, State#state.description}, State };
+
+handle_call( {get_name}, _From, State ) ->
+	{reply, {ok, State#state.name}, State };
+
+handle_call( {tick_counter, CounterName, Val}, _From, #state{ counter_list = CounterList } = State ) ->
+	case lists:keyfind( CounterName, 1, CounterList ) of
+		{CounterName, Pid} ->
+			case cs_counter:tick_counter( Pid, Val ) of
+				{ok, Val} -> {reply, {ok, Val}, State};
+				{error, Reason} -> 
+					error_logger:error_msg("[~p] ERROR: Sync Could not iterate counter ~p: ~p ~n ", [?MODULE, CounterName, Reason] ),
+					{reply, {error, Reason}, State};
+				Other ->
+				 	error_logger:error_msg("[~p] UNDEF: Sync Could not iterate counter ~p: ~p ~n ", [?MODULE, CounterName, Other] ),
+					{reply, Other, State}				
+			end;
+		_Other ->
+			{reply, {error, badcounter}, State}
+	end;	
+
 
 handle_call( {unregister_counter, Name, Reason}, _From, #state{ counter_list = CounterList } = State ) ->
 	case lists:keyfind( Name, 1, CounterList ) of
@@ -119,7 +174,7 @@ handle_call( {unregister_counter, Name, Reason}, _From, #state{ counter_list = C
 					error_logger:error_msg("[~p] ERROR: Could not unregister counter ~p: ~p ~n", [?MODULE, Name, Reason] ),
 					{reply, {error, Reason}, State}
 			end;
-		Other ->
+		_Other ->
 			{reply, ok, State}
 	end;
 
@@ -152,6 +207,24 @@ handle_call(Request, From, State) ->
 	NewState :: term(),
 	Timeout :: non_neg_integer() | infinity.
 %% ====================================================================
+
+handle_cast( {tick_counter, CounterName, Val}, #state{ counter_list = CounterList} = State ) ->
+	case lists:keyfind( CounterName, 1, CounterList ) of
+		{CounterName, Pid} ->
+			case cs_counter:tick_counter( Pid, Val ) of
+				{ok, Val} -> {noreply, State};
+				{error, Reason} -> 
+					error_logger:error_msg("[~p] ERROR: ASync Could not iterate counter ~p: ~p ~n ", [?MODULE, CounterName, Reason] ),
+					{noreply, State};
+				Other -> 
+					error_logger:error_msg("[~p] UNDEF: ASync Could not iterate counter ~p: ~p ~n ", [?MODULE, CounterName, Other] ),
+					{noreply, State}				
+			end;
+		_Other ->
+			{reply, {error, badcounter}, State}
+	end;	
+
+
 handle_cast(Msg, State) ->
     {noreply, State}.
 

@@ -1,1 +1,0 @@
--module( cs_lock_sup ).

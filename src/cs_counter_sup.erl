@@ -1,22 +1,18 @@
--module( cs_domain_sup ).
- 
+-module( cs_counter_sup ).
+
 -behaviour(supervisor).
--export([init/1]).
+-export([init/1, start_link/0]).
 
 %% ====================================================================
 %% API functions
 %% ====================================================================
-
--export([start_link/0, start_domain/2, start_domain/3]).
-
-
-start_link() ->
+start_link( ) ->
 	supervisor:start_link( {local, ?MODULE}, ?MODULE, [] ).
 
-start_domain( Parent, Name ) ->
-	start_domain( Parent, Name, [] ).
+start_counter( Parent, Name ) ->
+	start_counter( Parent, Name, [] ).
 
-start_domain( Parent, Name, Options ) ->
+start_counter( Parent, Name, Options ) ->
 	supervisor:start_child( Parent, Name, Options ).
 
 %% ====================================================================
@@ -41,12 +37,10 @@ start_domain( Parent, Name, Options ) ->
 	Modules :: [module()] | dynamic.
 %% ====================================================================
 init([]) ->
-    AChild = {'cs_domain',{'cs_domain',start_link,[]},
-	      temporary,2000,worker,['cs_domain']},
+    AChild = {'cs_counter',{'cs_counter',start_link,[]},
+	      temporary,2000,worker,['cs_counter']},
     {ok,{{one_for_all,0,1}, [AChild]}}.
 
 %% ====================================================================
 %% Internal functions
 %% ====================================================================
-
-
