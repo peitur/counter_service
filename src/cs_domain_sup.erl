@@ -17,7 +17,7 @@ start_domain( Parent, Name ) ->
 	start_domain( Parent, Name, [] ).
 
 start_domain( Parent, Name, Options ) ->
-	supervisor:start_child( Parent, Name )
+	supervisor:start_child( Parent, Name ).
 
 %% ====================================================================
 %% Behavioural functions 
