@@ -6,7 +6,7 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([start_link/1, stop/0, stop/1]).
+-export([start_link/0, start_link/1, stop/0, stop/1]).
 -export([
 
 	]).
@@ -19,14 +19,17 @@
 -record(state, { domain_list = [] }).
 
 
+start_link() ->
+	start_link( [] ).
+
 start_link( Opt ) ->
-	gen_server:start_link( {local, ?SERVER}, ?MODULE, Opt, [] ).
+	gen_server:start_link( {local, ?SERVER}, ?MODULE, [Opt], [] ).
 
 stop() ->
 	stop( normal ).
 
 stop( Reason ) ->
-	gen_server:call( ?MODULE, {stop, Reason } ).
+	gen_server:call( ?SERVER, {stop, Reason } ).
 
 %% init/1
 %% ====================================================================
@@ -40,7 +43,7 @@ stop( Reason ) ->
 	State :: term(),
 	Timeout :: non_neg_integer() | infinity.
 %% ====================================================================
-init([]) ->
+init( Options ) ->
 	
     {ok, #state{ domain_list = [] } }.
 

@@ -17,7 +17,7 @@ start_domain( Parent, Name ) ->
 	start_domain( Parent, Name, [] ).
 
 start_domain( Parent, Name, Options ) ->
-	supervisor:start_child( Parent, Name, Options ).
+	supervisor:start_child( ?MODULE, [Parent, Name, Options] ).
 
 %% ====================================================================
 %% Behavioural functions 
@@ -40,10 +40,10 @@ start_domain( Parent, Name, Options ) ->
 				   | temporary,
 	Modules :: [module()] | dynamic.
 %% ====================================================================
-init([]) ->
+init( _ ) ->
     AChild = {'cs_domain',{'cs_domain',start_link,[]},
 	      temporary,2000,worker,['cs_domain']},
-    {ok,{{one_for_all,0,1}, [AChild]}}.
+    {ok,{{simple_one_for_one,0,1}, [AChild]}}.
 
 %% ====================================================================
 %% Internal functions

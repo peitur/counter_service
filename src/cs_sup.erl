@@ -41,10 +41,10 @@ init([]) ->
     DomainSup = {'cs_domain_sup',{'cs_domain_sup',start_link,[]},
       permanent,2000, supervisor, ['cs_domain_sup'] },
 
-    LockSup = {'cs_lock_sup',{'cs_lock_sup',start_link,[]},
-      permanent,2000, supervisor, ['cs_lock_sup'] },
+    CounterSup = {'cs_counter_sup',{'cs_counter_sup',start_link,[]},
+      permanent,2000, supervisor, ['cs_counter_sup'] },
 
-	Children = [Service],
+	Children = [Service, DomainSup, CounterSup],
     {ok,{{one_for_all,0,1}, Children }}.
 
 %% ====================================================================
