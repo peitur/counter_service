@@ -29,7 +29,28 @@ stop() ->
 	stop( normal ).
 
 stop( Reason ) ->
-	gen_server:call( ?SERVER, {stop, Reason } ).
+	gen_server:call( ?SERVER, { stop, Reason } ).
+
+
+register_domain( Domain ) ->
+	cs_service:register_domain( Domain ).
+
+register_domain( Domain, Options ) ->
+	cs_service:register_domain( Domain, Options ).
+
+unregister_domain( Domain ) ->
+	cs_service:unregister_domain( Domain ).
+
+register_counter( Domain, Counter ) ->
+	cs_service:register_counter( Domain, Counter ).
+
+register_counter( Domain, Counter, Options ) ->
+	cs_service:register_counter( Domain, Counter, Options ).
+
+unregister_counter( Domain, Counter ) ->
+	cs_service:unregister_counter( Domain, Counter ).
+
+
 
 %% init/1
 %% ====================================================================
@@ -44,7 +65,8 @@ stop( Reason ) ->
 	Timeout :: non_neg_integer() | infinity.
 %% ====================================================================
 init( Options ) ->
-	
+	erlang:process_flag( trap_exit, true ).	
+
     {ok, #state{ domain_list = [] } }.
 
 
