@@ -13,40 +13,75 @@
 
 -define( SERVER, counter_service ).
 
+-define( MOD_DOMAIN, cs_domain ).
+-define( MOD_COUNTER, cs_counter ).
+
 %% ====================================================================
 %% Behavioural functions 
 %% ====================================================================
+
+%% domain_list :: [domainitem()|list()]
+%%		domainitem() :: {Name :: atom(), Pid :: pid() }
 -record(state, { domain_list = [] }).
 
-
+%% start_link/0
+%% ====================================================================
+%% ====================================================================
 start_link() ->
 	start_link( [] ).
 
+%% start_link/1
+%% ====================================================================
+%% ====================================================================
 start_link( Opt ) ->
 	gen_server:start_link( {local, ?SERVER}, ?MODULE, [Opt], [] ).
 
+%% stop/0
+%% ====================================================================
+%% ====================================================================
 stop() ->
 	stop( normal ).
 
+%% stop/1
+%% ====================================================================
+%% ====================================================================
 stop( Reason ) ->
 	gen_server:call( ?SERVER, { stop, Reason } ).
 
 
+%% register_domain/1
+%% ====================================================================
+%% ====================================================================
 register_domain( Domain ) ->
 	cs_service:register_domain( Domain ).
 
+%% register_domain/2
+%% ====================================================================
+%% ====================================================================
 register_domain( Domain, Options ) ->
 	cs_service:register_domain( Domain, Options ).
 
+%% unregister_domain/1
+%% ====================================================================
+%% ====================================================================
 unregister_domain( Domain ) ->
 	cs_service:unregister_domain( Domain ).
 
+%% register_counter/2
+%% ====================================================================
+%% ====================================================================
 register_counter( Domain, Counter ) ->
 	cs_service:register_counter( Domain, Counter ).
 
+%% register_counter/3
+%% ====================================================================
+%% ====================================================================
 register_counter( Domain, Counter, Options ) ->
 	cs_service:register_counter( Domain, Counter, Options ).
 
+%% unregister_counter/2
+%% ====================================================================
+%% ====================================================================
 unregister_counter( Domain, Counter ) ->
 	cs_service:unregister_counter( Domain, Counter ).
 
@@ -65,7 +100,7 @@ unregister_counter( Domain, Counter ) ->
 	Timeout :: non_neg_integer() | infinity.
 %% ====================================================================
 init( Options ) ->
-	erlang:process_flag( trap_exit, true ).	
+	erlang:process_flag( trap_exit, true ),
 
     {ok, #state{ domain_list = [] } }.
 
@@ -87,6 +122,16 @@ init( Options ) ->
 	Timeout :: non_neg_integer() | infinity,
 	Reason :: term().
 %% ====================================================================
+handle_call( {register_domain, Domain, Options}, _From, #state{ domain_list = DomainList } = State ) ->
+	case x_register_domain( Domain, Options, DomainList ) of
+		{ok,Pid} ->
+			{reply, {ok, Pid}, State#state{ 
+				domain_list = [{Domain, Pid}|DomainList] 
+			}};
+	{error, Reason} -> 
+			{reply, {error, Reason}, State}
+	end;
+
 handle_call( {stop, Reason}, _From, State ) ->
 	{stop, Reason, ok, State};
 
@@ -158,8 +203,13 @@ code_change(OldVsn, State, Extra) ->
 %% ====================================================================
 
 
-
-
+%% x_terminate_domain/1
+%% ====================================================================
+%% Terminate list of domains, used to terminate all registered domains in service
+-spec x_terminate_domain( DomainList ) -> N when
+	DomainList :: list(), 
+	N :: non_neg_integer().
+%% ====================================================================
 x_terminate_domain( DomainList ) ->
 	x_terminate_domain( DomainList, 0).
 
@@ -177,5 +227,83 @@ x_terminate_domain( [{K,DomPid}|List], N) ->
 
 
 
+%% x_register_domain/2
+%% ====================================================================
+%% Terminate list of domains, used to terminate all registered domains in service
+-spec x_register_domain( Domain, Options, DomainList ) -> {ok, Pid} | {error, Reason} when
+	Domain :: atom(),
+	Options :: list(),
+	DomainList :: list(),
+	Pid :: pid(),
+	Reason :: atom().
+%% ====================================================================
+x_register_domain( Domain, Options, DomainList ) when is_list( Domain ) ->
+	x_register_domain( list_to_atom(Domain), Options, DomainList );
 
+x_register_domain( Domain, Options, DomainList ) ->
+	case x_domain_exists( Domain, DomainList ) of
+		false ->
+			case x_start_domain( Domain, Options ) of
+				{ok, Pid} -> {ok,Pid};	
+				{error, Reason} ->
+					error_logger:error_msg("[~p] ERROR: Could not start domain ~p : ~p", [?MODULE, Domain, Reason] ),
+					{error, Reason}
+			end;
+		{error, Reason} ->
+			error_logger:error_msg("[~p] ERROR: Could not search domain ~p : ~p", [?MODULE, Domain, Reason] ),
+			{error, Reason};
+		Pid when is_pid( Pid ) -> {ok, Pid};
+		Other -> Other
+	end.
+
+
+%% 
+%% ====================================================================
+%% ====================================================================
+x_unregister_domain( Domain ) ->
+	ok.
+
+%%
+%% ====================================================================
+%% ====================================================================
+x_register_counter( Domain, Counter, Options ) ->
+	ok.
+
+%%
+%% ====================================================================
+%% ====================================================================
+x_unregister_counter( Domain, Counter ) ->
+	ok.
+
+
+%% x_start_domain/2
+%% ====================================================================
+%% Start a domain process 
+-spec x_start_domain( Domain, Options ) -> {ok, Pid} | {error, Reason} when
+	Domain :: atom(),
+	Options :: list(),
+	Pid :: pid(),
+	Reason :: term().
+%% ====================================================================
+x_start_domain( Domain, Options ) ->
+	case ?MOD_DOMAIN:register_domain( self(), Domain, Options ) of
+		{ok, Pid} -> {ok, Pid};
+		{error, Reason} -> {error, Reason}
+	end.
+
+%% x_domain_exists/2
+%% ====================================================================
+%% Checks if the domain is already registered.
+%% If Domain exists Pid is returned.
+%% If Domain is missing, false isreturned.
+-spec x_domain_exists( SearchDomain, List ) -> Pid | false when
+	SearchDomain :: atom(),
+	List :: list(),
+	Pid :: pid().
+%% ====================================================================
+x_domain_exists( SearchDomain, List ) ->
+	case lists:keyfind( SearchDomain, 1, List ) of
+		false -> false;
+		{SearchDomain, Pid} -> Pid
+	end.
 
