@@ -1,4 +1,5 @@
 
+-define( MOD_SERVICE, cs_service ).
 -define( MOD_DOMAIN, cs_domain ).
 -define( MOD_COUNTER, cs_counter ).
 

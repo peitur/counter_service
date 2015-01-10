@@ -30,22 +30,22 @@ register_domain( Domain ) when is_atom( Domain ) ->
 	register_domain( atom_to_binary( Domain, latin1 ) );
 
 register_domain( Domain ) ->
-	?MOD_DOMAIN:register_domain( Domain ).
+	?MOD_SERVICE:register_domain( Domain ).
 
 register_domain( Domain, Options ) ->
-	?MOD_DOMAIN:register_domain( Domain, Options ).
+	?MOD_SERVICE:register_domain( Domain, Options ).
 
 unregister_domain( Domain ) ->
-	?MOD_DOMAIN:unregister_domain( Domain ).
+	?MOD_SERVICE:unregister_domain( Domain ).
 
 register_counter( Domain, Counter ) ->
-	?MOD_DOMAIN:register_counter( Domain, Counter ).
+	?MOD_SERVICE:register_counter( Domain, Counter ).
 
 register_counter( Domain, Counter, Options ) ->
-	?MOD_DOMAIN:register_counter( Domain, Counter, Options ).
+	?MOD_SERVICE:register_counter( Domain, Counter, Options ).
 
 unregister_counter( Domain, Counter ) ->
-	?MOD_DOMAIN:unregister_counter( Domain, Counter ).
+	?MOD_SERVICE:unregister_counter( Domain, Counter ).
 
 
 

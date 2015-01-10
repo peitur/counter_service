@@ -5,8 +5,8 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -export([
-		start_link/1, start_link/2,
-		register_counter/1, register_counter/2,
+		start_link/2, start_link/3,
+		register_counter/2, register_counter/3,
 		unregister_counter/1, unregister_counter/2,
 		stop/1, stop/2
 	]).
@@ -27,17 +27,17 @@
 %% API functions
 %% ====================================================================
 
-start_link( Name ) ->
-	start_link( Name, [] ).
+start_link( Parent, Name ) ->
+	start_link( Parent, Name, [] ).
 
-start_link( Name, Options ) ->
-	gen_server:start_link( ?MODULE, [Name, Options], [] ).
+start_link( Parent, Name, Options ) ->
+	gen_server:start_link( ?MODULE, [Parent, Name, Options], [] ).
 
-register_counter( Name ) -> 
-	cs_counter_sup:start_counter( Name ).
+register_counter( Parent, Name ) -> 
+	cs_counter_sup:start_counter( Parent, Name ).
 
-register_counter( Name, Options ) ->
-	cs_counter_sup:start_counter( Name, Options ).
+register_counter( Parent, Name, Options ) ->
+	cs_counter_sup:start_counter( Parent, Name, Options ).
 
 unregister_counter( Pid ) ->
 	stop( Pid ).

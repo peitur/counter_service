@@ -11,10 +11,13 @@
 %% ====================================================================
 -export([start_link/0, start_link/1, stop/0, stop/1]).
 -export([
-
+		register_domain/1, register_domain/2,
+		register_counter/2, register_counter/3,
+		unregister_domain/1,
+		unregister_counter/2
 	]).
 
--define( SERVER, counter_service ).
+-define( SERVER, ?SERVER_SERVCE ).
 
 %% ====================================================================
 %% Behavioural functions 
@@ -257,6 +260,7 @@ x_terminate_domain( DomainList ) ->
 x_terminate_domain( [], N ) ->	N;
 
 x_terminate_domain( [{K,DomPid}|List], N) ->
+	io:format(">>>>>>>>>>>>>> ~p ~p ~n", [K, DomPid] ),
 	case ?MOD_DOMAIN:stop( DomPid ) of
 		{error, Reason} -> 
 			error_logger:error_msg("[~p] ERROR: Could not terminate domain ~p : ~p ~n", [?MODULE, K,Reason]),
